@@ -41,12 +41,11 @@ const Message: React.FC = () => {
       });
     });
 
-    // Enter 打开聊天框并解锁鼠标
+    // Enter 打开聊天框：保持鼠标锁定，不出现光标
     const openChat = (e: KeyboardEvent) => {
       const w = window as any;
-      if (e.code === 'Enter' && document.pointerLockElement && !w.__dead && !w.__panelOpen) {
+      if (e.code === 'Enter' && document.pointerLockElement && !w.__chatOpen && !w.__dead && !w.__panelOpen) {
         e.preventDefault();
-        document.exitPointerLock();
         w.__chatOpen = true;
         setOpen(true);
       }
@@ -101,7 +100,7 @@ const Message: React.FC = () => {
         printLocal(['[ERR] UNKNOWN ROLE — WARRIOR / MAGE / ROGUE']);
         return;
       }
-      socket.emit('player update', { role });
+      socket.emit('player update', { roleId: role.id });
       window.dispatchEvent(new CustomEvent('cmd:update', { detail: { role } }));
       return;
     }
@@ -129,7 +128,7 @@ const Message: React.FC = () => {
         // 切队伍同时更换角色
         role = roles[Math.floor(Math.random() * roles.length)];
       }
-      socket.emit('player update', { team, role });
+      socket.emit('player update', { team, roleId: role.id });
       window.dispatchEvent(new CustomEvent('cmd:update', { detail: { team, role } }));
       return;
     }
@@ -180,8 +179,11 @@ const Message: React.FC = () => {
               autoFocus
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') sendMessage();
-                if (e.key === 'Escape') closeInput();
+                if (e.key === 'Enter') {
+                  e.stopPropagation()
+                  sendMessage()
+                }
+                if (e.key === 'Escape') closeInput()
               }}
               onBlur={closeInput}
             />

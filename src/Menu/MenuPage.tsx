@@ -5,7 +5,7 @@ import styles from './styles.module.css'
 const TEAMS = ['BEAR', 'PMC']
 
 const staticText = `NEURAL LINK TERMINAL v2.0
-COPYRIGHT 2077 CYBER INDUSTRIES
+COPYRIGHT 2033 DIO INDUSTRIES
 
 ===== LINK STATUS =====
 * UPLINK: STANDBY

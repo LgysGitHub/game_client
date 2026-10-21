@@ -7,24 +7,26 @@ import { roles, Role } from './types/roles'
 import { Model } from './Scene'
 import Message from './Message/Message'
 import { World } from './World'
+import { Cave, canStand, spawnForTeam } from './World/cave'
+import { useCave } from './World/useCave'
+import { Minimap } from './World/Minimap'
+import { selfPos } from './World/selfPos'
 import MenuPage, { StartOptions } from './Menu/MenuPage'
 import { socket } from './Socket/socket'
 
 import styles from './App.module.css'
+import mapStyles from './World/map.module.css'
 
 type PlayerInfo = { id: string; name?: string; team?: string; role: Role; position: number[]; rotation: number }
 
-const GROUND_Y = -1
+const GROUND_Y = 0
 const EYE_OFFSET = 1.6
 const EYE_Y = GROUND_Y + EYE_OFFSET
 const MODEL_LIFT = 0.02
-const BOUND = 25
 const LOCK_COOLDOWN = 1300
 
-const spawn = (): number[] => [Math.random() * 8 - 4, EYE_Y + 5, Math.random() * 8 - 4]
-
 // 第一人称控制器
-const FirstPerson: React.FC<{ start: number[] }> = ({ start }) => {
+const FirstPerson: React.FC<{ start: number[]; cave: Cave }> = ({ start, cave }) => {
   const { camera, gl } = useThree()
   const controlsRef = useRef<any>(null)
   const keys = useRef<Record<string, boolean>>({})
@@ -35,6 +37,9 @@ const FirstPerson: React.FC<{ start: number[] }> = ({ start }) => {
   useEffect(() => {
     camera.position.set(start[0], start[1], start[2])
     camera.rotation.order = 'YXZ'
+    selfPos.x = start[0]
+    selfPos.z = start[2]
+    selfPos.yaw = 0
 
     const down = (e: KeyboardEvent) => {
       if ((window as any).__chatOpen || (window as any).__panelOpen || (window as any).__dead) return
@@ -106,16 +111,21 @@ const FirstPerson: React.FC<{ start: number[] }> = ({ start }) => {
     dir.normalize()
     const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize()
 
-    camera.position.addScaledVector(dir, f * 5 * d)
-    camera.position.addScaledVector(right, r * 5 * d)
+    // 分轴碰撞：撞墙时沿另一轴滑动，不会穿墙
+    const step = 5 * d
+    const nx = camera.position.x + dir.x * f * step + right.x * r * step
+    if (canStand(cave, nx, camera.position.z)) camera.position.x = nx
+    const nz = camera.position.z + dir.z * f * step + right.z * r * step
+    if (canStand(cave, camera.position.x, nz)) camera.position.z = nz
 
     if (k.Space && camera.position.y <= EYE_Y + 0.001) velY.current = 7
     velY.current -= 20 * d
     camera.position.y = Math.max(EYE_Y, camera.position.y + velY.current * d)
     if (camera.position.y <= EYE_Y) velY.current = 0
 
-    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -BOUND, BOUND)
-    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -BOUND, BOUND)
+    selfPos.x = camera.position.x
+    selfPos.z = camera.position.z
+    selfPos.yaw = camera.rotation.y
 
     const now = performance.now()
     if (now - lastEmit.current > 50) {
@@ -231,12 +241,18 @@ const OtherPlayer: React.FC<{ player: PlayerInfo }> = ({ player }) => {
 }
 
 // CRT 启动屏
-const BootScreen: React.FC<{ player: PlayerInfo | null; progress: number; linkError: boolean }> = ({ player, progress, linkError }) => (
+const BootScreen: React.FC<{
+  player: PlayerInfo | null
+  progress: number
+  linkError: boolean
+  seed: number | null
+  mapLoading: boolean
+}> = ({ player, progress, linkError, seed, mapLoading }) => (
   <div className={`${styles.boot} ${styles.terminal}`}>
     <div className={styles.bootLine}>NEURAL LINK TERMINAL v2.0</div>
     <div className={styles.bootLine}>&gt; ESTABLISHING SECURE CONNECTION ...... {linkError ? 'FAILED' : player ? 'OK' : '...'}</div>
     <div className={styles.bootLine}>&gt; ASSIGNING IDENTITY ...... {player ? `${player.role.name} // ${player.id}` : 'PENDING'}</div>
-    <div className={styles.bootLine}>&gt; LOADING WORLD MATRIX</div>
+    <div className={styles.bootLine}>&gt; LOADING WORLD MATRIX ...... {mapLoading ? `GEN ${seed ?? '----'}` : seed ? `SEED ${seed}` : 'PENDING'}</div>
     <div className={styles.progress}>
       <div className={styles.progressFill} style={{ width: `${progress}%` }} />
     </div>
@@ -347,6 +363,14 @@ const App: React.FC = () => {
   const [scoreboard, setScoreboard] = useState(false)
   const [respawnId, setRespawnId] = useState(0)
   const [respawnIn, setRespawnIn] = useState(0)
+  const [seed, setSeed] = useState<number | null>(null)
+  const [mapHash, setMapHash] = useState<number | null>(null)
+  const [connected, setConnected] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
+  const [seedInput, setSeedInput] = useState('')
+  const [seedError, setSeedError] = useState('')
+
+  const { cave, loading: caveLoading, mismatch: caveMismatch } = useCave(seed, mapHash)
 
   const playerRef = useRef<PlayerInfo | null>(null)
   const phaseRef = useRef(phase)
@@ -354,6 +378,8 @@ const App: React.FC = () => {
   const respawnFnRef = useRef<() => void>(() => {})
   const startOpts = useRef<StartOptions>({})
   const respawnTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const joinedRef = useRef(false)
+  const lastMapSeed = useRef<number | null>(null)
   playerRef.current = player
   phaseRef.current = phase
   menuRef.current = menu
@@ -362,22 +388,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const onConnect = () => {
       setLinkError(false)
-      const opts = startOpts.current
-      const role = opts.role || roles[Math.floor(Math.random() * roles.length)]
-      const newPlayer: PlayerInfo = {
-        id: socket.id as string,
-        name: opts.name,
-        team: opts.team,
-        role,
-        position: spawn(),
-        rotation: 0
+      setConnected(true)
+    }
+    const onDisconnect = () => setConnected(false)
+    const onMapSeed = (value: number | { seed: number; hash: number }) => {
+      const nextSeed = typeof value === 'number' ? value : value?.seed
+      const nextHash = typeof value === 'number' ? null : value?.hash
+      if (Number.isInteger(nextSeed) && nextSeed > 0) {
+        setSeed(nextSeed)
+        setMapHash(typeof nextHash === 'number' && Number.isInteger(nextHash) ? nextHash : null)
       }
-      setPlayer(newPlayer)
-      socket.emit('player joined', { name: newPlayer.name, team: newPlayer.team, role: newPlayer.role, position: newPlayer.position })
     }
 
     socket.on('connect', onConnect)
+    socket.on('disconnect', onDisconnect)
     socket.on('connect_error', () => setLinkError(true))
+    socket.on('map:seed', onMapSeed)
 
     // 服务端权威快照：玩家列表/位置全部以快照为准
     const onState = (list: PlayerInfo[]) => {
@@ -416,7 +442,7 @@ const App: React.FC = () => {
     // 窗口失焦（Alt+Tab / 切窗口）时 keyup 可能丢失，强制收起
     const onBlur = () => setScoreboard(false)
 
-    // I：开关背包；背包内 / 菜单打开时 Esc 关闭并继续游戏
+    // I：开关背包；M：开关 2D 小地图；背包内 / 菜单打开时 Esc 关闭并继续游戏
     const keyDown = (e: KeyboardEvent) => {
       const w = window as any
       if (phaseRef.current !== 'game' || w.__chatOpen || w.__dead) return
@@ -425,6 +451,9 @@ const App: React.FC = () => {
         w.__panelOpen = true
         setPanelOpen(true)
         if (document.pointerLockElement) document.exitPointerLock()
+      } else if (e.code === 'KeyM') {
+        if (e.repeat || w.__panelOpen || menuRef.current) return
+        setMapOpen((v) => !v)
       } else if (e.code === 'Escape') {
         if (w.__panelOpen) {
           closePanel()
@@ -482,7 +511,9 @@ const App: React.FC = () => {
     // 清理监听器
     return () => {
       socket.off('connect', onConnect)
+      socket.off('disconnect', onDisconnect)
       socket.off('connect_error')
+      socket.off('map:seed', onMapSeed)
       socket.off('players:state', onState)
       document.removeEventListener('pointerlockchange', onLockChange)
       window.removeEventListener('keydown', tabDown)
@@ -513,15 +544,61 @@ const App: React.FC = () => {
     if (phase === 'boot' && progress >= 100) setPhase('game')
   }, [progress, phase])
 
+  // 加入：等洞穴生成完成后，用本队出生点建立角色
+  useEffect(() => {
+    if (phase !== 'boot' || !cave || !connected || player || joinedRef.current) return
+    const opts = startOpts.current
+    const role = opts.role || roles[Math.floor(Math.random() * roles.length)]
+    const sp = spawnForTeam(cave, opts.team)
+    const newPlayer: PlayerInfo = {
+      id: socket.id as string,
+      name: opts.name,
+      team: opts.team,
+      role,
+      position: [sp.x, EYE_Y, sp.z],
+      rotation: 0
+    }
+    joinedRef.current = true
+    setPlayer(newPlayer)
+    socket.emit('player joined', { name: newPlayer.name, team: newPlayer.team, roleId: role.id, position: newPlayer.position })
+  }, [phase, cave, connected, player])
+
+  // 地图切换：种子变化 -> 洞穴重建 -> 玩家回到本队新出生点
+  useEffect(() => {
+    if (phase !== 'game' || !cave || !player) return
+    if (lastMapSeed.current === null) {
+      lastMapSeed.current = cave.seed
+      return
+    }
+    if (lastMapSeed.current === cave.seed) return
+    lastMapSeed.current = cave.seed
+    const sp = spawnForTeam(cave, player.team)
+    const position = [sp.x, EYE_Y, sp.z]
+    setPlayer({ ...player, position })
+    setRespawnId((x) => x + 1)
+    socket.emit('player respawn', { roleId: player.role.id, position })
+  }, [phase, cave, player])
+
+  useEffect(() => {
+    if (menu || panelOpen || respawnIn > 0) setMapOpen(false)
+  }, [menu, panelOpen, respawnIn])
+
   const startGame = (opts: StartOptions = {}) => {
     const w = window as any
     cancelLock()
     w.__panelOpen = false
     w.__dead = false
     startOpts.current = opts
+    joinedRef.current = false
+    lastMapSeed.current = null
     setPlayer(null)
     playerRef.current = null
     setPlayers([])
+    setSeed(null)
+    setMapHash(null)
+    setMapOpen(false)
+    setSeedInput('')
+    setSeedError('')
     setProgress(0)
     setLinkError(false)
     setMenu(false)
@@ -545,6 +622,11 @@ const App: React.FC = () => {
     setMenu(false)
     setPlayer(null)
     setPlayers([])
+    joinedRef.current = false
+    lastMapSeed.current = null
+    setSeed(null)
+    setMapHash(null)
+    setMapOpen(false)
     setProgress(0)
     setPhase('menu')
   }
@@ -595,17 +677,18 @@ const App: React.FC = () => {
         // 倒计时结束：新角色 + 新出生点（距点击 3s，仍在浏览器手势激活窗口内）
         const opts = startOpts.current
         const role = roles[Math.floor(Math.random() * roles.length)]
+        const sp = cave ? spawnForTeam(cave, opts.team) : { x: 0, z: 0 }
         const newPlayer: PlayerInfo = {
           id: socket.id as string,
           name: opts.name,
           team: opts.team,
           role,
-          position: spawn(),
+          position: [sp.x, EYE_Y, sp.z],
           rotation: 0
         }
         setPlayer(newPlayer)
         setRespawnId((x) => x + 1)
-        socket.emit('player respawn', { role, position: newPlayer.position })
+        socket.emit('player respawn', { roleId: role.id, position: newPlayer.position })
         if (!document.pointerLockElement) requestLock()
         return 0
       })
@@ -615,16 +698,39 @@ const App: React.FC = () => {
   const dead = respawnIn > 0
   respawnFnRef.current = respawn
 
+  // 随机新地图 / 指定种子加载（服务端校验后广播，所有客户端同步重建）
+  const newMap = () => {
+    setSeedError('')
+    socket.emit('map seed', Math.floor(Math.random() * 0x7fffffff) + 1)
+  }
+  const loadSeed = () => {
+    const value = Number(seedInput.trim())
+    if (!Number.isInteger(value) || value < 1 || value > 0x7fffffff) {
+      setSeedError('INVALID SEED (1 - 2147483647)')
+      return
+    }
+    setSeedError('')
+    socket.emit('map seed', value)
+  }
+
   return (
     <>
       {phase === 'menu' && <MenuPage roles={roles} onStart={startGame} onQuit={closePage} />}
 
-      {phase === 'boot' && <BootScreen player={player} progress={progress} linkError={linkError} />}
+      {phase === 'boot' && (
+        <BootScreen
+          player={player}
+          progress={progress}
+          linkError={linkError}
+          seed={seed}
+          mapLoading={caveLoading}
+        />
+      )}
 
-      {phase === 'game' && player && (
+      {phase === 'game' && player && cave && (
         <ErrorBoundary>
-          <World>
-            <FirstPerson key={respawnId} start={player.position} />
+          <World cave={cave}>
+            <FirstPerson key={respawnId} start={player.position} cave={cave} />
             {
               players.filter((p) => p.id !== socket.id).map((p) => {
                 return <OtherPlayer key={p.id} player={p} />
@@ -634,10 +740,37 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
+      {phase === 'game' && seed !== null && (
+        <div className={mapStyles.seedTag}>MAP SEED {seed}{caveLoading ? ' // SYNCING' : ''}</div>
+      )}
+
+      {phase === 'game' && caveMismatch && (
+        <div className={mapStyles.loadingOverlay}>
+          <div className={mapStyles.loadingBox}>
+            &gt; CAVE MATRIX HASH MISMATCH // VERSION ANOMALY
+            <div className={mapStyles.seedLabel}>SEED {seed ?? '----'}</div>
+          </div>
+        </div>
+      )}
+
+      {phase === 'game' && caveLoading && (
+        <div className={mapStyles.loadingOverlay}>
+          <div className={mapStyles.loadingBox}>
+            &gt; GENERATING CAVE MATRIX
+            <div className={mapStyles.seedLabel}>SEED {seed ?? '----'}</div>
+            <div className={mapStyles.loadingBar}><div className={mapStyles.loadingFill} /></div>
+          </div>
+        </div>
+      )}
+
+      {phase === 'game' && mapOpen && cave && !menu && !panelOpen && !dead && (
+        <Minimap cave={cave} players={players} selfId={socket.id as string} selfTeam={player?.team} />
+      )}
+
       {phase === 'game' && <Message></Message>}
 
       {phase === 'game' && !menu && !panelOpen && !dead && (
-        <div className={styles.hint}>[CLICK] ENGAGE · WASD MOVE · SPACE JUMP · ENTER CHAT (/help) · TAB PLAYERS · I CHARACTER · ESC MENU</div>
+        <div className={styles.hint}>[CLICK] ENGAGE · WASD MOVE · SPACE JUMP · ENTER CHAT (/help) · TAB PLAYERS · I CHARACTER · M MAP · ESC MENU</div>
       )}
 
       {phase === 'game' && scoreboard && !panelOpen && !menu && !dead && (
@@ -665,6 +798,23 @@ const App: React.FC = () => {
             <button className={styles.btn} onClick={resume}>[ CONTINUE ]</button>
             <button className={styles.btn} onClick={respawn}>[ RESPAWN ]</button>
             <button className={styles.btn} onClick={logout}>[ LOG OUT ]</button>
+
+            <div className={mapStyles.seedSection}>
+              <div className={mapStyles.seedLabel}>// WORLD MATRIX · CURRENT SEED {seed ?? '--'}</div>
+              <button className={styles.btn} onClick={newMap}>[ GENERATE NEW MAP ]</button>
+              <div className={mapStyles.seedRow}>
+                <input
+                  className={mapStyles.seedInput}
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') loadSeed() }}
+                  placeholder='SEED 1 - 2147483647'
+                  spellCheck={false}
+                />
+                <button className={styles.btn} onClick={loadSeed}>[ LOAD ]</button>
+              </div>
+              {seedError && <div className={mapStyles.seedError}>{seedError}</div>}
+            </div>
           </div>
         </div>
       )}

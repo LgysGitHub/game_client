@@ -1,0 +1,161 @@
+/* 洞穴地图相关 UI：种子标签 / 种子面板 / loading / 小地图 */
+
+.seedTag {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 6;
+  pointer-events: none;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid #1a3f1a;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.25);
+  color: #00ff99;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
+}
+
+.mapWrap {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  z-index: 7;
+  pointer-events: none;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #1a3f1a;
+  box-shadow: 0 0 18px rgba(0, 255, 65, 0.3), inset 0 0 24px rgba(0, 255, 65, 0.06);
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.mapHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+  color: #00ff41;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
+}
+
+.mapSeed {
+  color: #00ff99;
+}
+
+.mapCanvas {
+  display: block;
+  width: 340px;
+  height: 340px;
+  image-rendering: pixelated;
+  border: 1px solid #1a3f1a;
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.25);
+}
+
+.mapLegend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: #00ff99;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.mapHint {
+  margin-top: 6px;
+  text-align: right;
+  color: #1a8f4a;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.loadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.loadingBox {
+  min-width: 320px;
+  padding: 18px 22px;
+  border: 2px solid #1a3f1a;
+  background: #000;
+  box-shadow: 0 0 18px rgba(0, 255, 65, 0.35), inset 0 0 20px rgba(0, 255, 65, 0.08);
+  color: #00ff41;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
+}
+
+.loadingBar {
+  margin-top: 10px;
+  height: 8px;
+  border: 1px solid #1a3f1a;
+  overflow: hidden;
+}
+
+.loadingFill {
+  height: 100%;
+  background: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
+  animation: caveLoad 1.1s ease-in-out infinite;
+}
+
+@keyframes caveLoad {
+  0% { width: 8%; margin-left: 0; }
+  50% { width: 45%; margin-left: 30%; }
+  100% { width: 8%; margin-left: 92%; }
+}
+
+.seedSection {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #1a3f1a;
+}
+
+.seedLabel {
+  color: #00ff99;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.seedRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.seedInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid #1a3f1a;
+  color: #00ff41;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  caret-color: #00ff41;
+}
+
+.seedInput:focus {
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+}
+
+.seedError {
+  margin-top: 6px;
+  color: #00ff99;
+  font-size: 11px;
+  letter-spacing: 1px;
+}

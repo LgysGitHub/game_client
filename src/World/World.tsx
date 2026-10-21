@@ -1,12 +1,13 @@
-import { Canvas, useLoader, useThree } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { ReactNode, useEffect } from 'react'
-import { TextureLoader } from 'three'
 
-import groundTexture from '../assets/flower_scattered_gravel_diff_4k.jpg'
+import { Cave } from './cave'
+import { CaveMesh } from './CaveMesh'
+import { AsciiEffect } from './AsciiEffect'
 
 import styles from './styles.module.css'
 
-const BG = '#FFF'
+const BG = '#05070a'
 
 // 60fps 节流：demand 模式下由固定节拍驱动渲染
 function FramePump() {
@@ -18,27 +19,18 @@ function FramePump() {
   return null
 }
 
-export function World({
-  children
-}: { children: ReactNode }) {
-  const texture = useLoader(TextureLoader, groundTexture);
-  texture.repeat.set(1, 1);
-
+export function World({ cave, children }: { cave: Cave; children: ReactNode }) {
   return (
     <Canvas className={styles.world} frameloop='demand'>
       <FramePump />
       <color attach='background' args={[BG]} />
-      <fog attach='fog' args={[BG, 45, 75]} />
-      <ambientLight intensity={1.6} />
-      <hemisphereLight args={['#9affc0', '#203018', 0.8]} />
-      <pointLight position={[10,10,10]} />
-      {
-        children
-      }
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial map={texture} />
-      </mesh>
+      <fog attach='fog' args={[BG, 6, 55]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={['#8fb89a', '#0a1410', 0.7]} />
+      <directionalLight position={[40, 80, 20]} intensity={0.9} />
+      <CaveMesh cave={cave} />
+      {children}
+      <AsciiEffect cols={260} />
     </Canvas>
-  );
+  )
 }
