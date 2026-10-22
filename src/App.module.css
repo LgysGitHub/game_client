@@ -89,6 +89,11 @@
   font-size: 13px;
   line-height: 1.6;
   pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.chatHidden{
+  opacity: 0;
 }
 
 .chat ul{

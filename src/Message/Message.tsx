@@ -13,21 +13,38 @@ const HELP_LINES = [
 ];
 
 type ChatMsg = { id: string; message: string; sid?: string; team?: string };
-type LocalLine = { local: true; text: string };
+type LocalLine = { local: true; id: number; text: string };
 
 const Message: React.FC = () => {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [locals, setLocals] = useState<LocalLine[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const localId = useRef(0);
 
-  const printLocal = (lines: string[]) =>
-    setLocals((prev) => [...prev, ...lines.map((text) => ({ local: true as const, text }))].slice(-6));
+  const showChat = (delay = 6000) => {
+    setVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      if (!(window as any).__chatOpen) setVisible(false);
+    }, delay);
+  };
+
+  const printLocal = (lines: string[]) => {
+    const added = lines.map((text) => ({ local: true as const, id: ++localId.current, text }));
+    setLocals((prev) => [...prev, ...added].slice(-6));
+    showChat();
+    const ids = new Set(added.map((l) => l.id));
+    setTimeout(() => setLocals((prev) => prev.filter((l) => !ids.has(l.id))), 6000);
+  };
 
   const closeInput = () => {
     setOpen(false);
     (window as any).__chatOpen = false;
+    showChat();
   };
 
   useEffect(() => {
@@ -39,6 +56,7 @@ const Message: React.FC = () => {
         }
         return [...prevMessages, data]
       });
+      showChat();
     });
 
     // Enter 打开聊天框：保持鼠标锁定，不出现光标
@@ -47,6 +65,8 @@ const Message: React.FC = () => {
       if (e.code === 'Enter' && document.pointerLockElement && !w.__chatOpen && !w.__dead && !w.__panelOpen) {
         e.preventDefault();
         w.__chatOpen = true;
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        setVisible(true);
         setOpen(true);
       }
     };
@@ -56,6 +76,7 @@ const Message: React.FC = () => {
     return () => {
       socket.off('chat message');
       window.removeEventListener('keydown', openChat);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
     };
   }, []);
 
@@ -154,11 +175,11 @@ const Message: React.FC = () => {
 
   const lines: { key: string; node: React.ReactNode; self?: boolean }[] = [
     ...messages.map((m, i) => ({ key: `s${i}`, node: renderLine(m), self: m.sid === socket.id })),
-    ...locals.map((l, i) => ({ key: `l${i}`, node: l.text })),
+    ...locals.map((l) => ({ key: `l${l.id}`, node: l.text })),
   ].slice(-6);
 
   return (
-    <div className={styles.chat}>
+    <div className={`${styles.chat} ${visible || open ? '' : styles.chatHidden}`}>
       <ul>
         {lines.map((l) => (
           <li key={l.key} className={l.self ? styles.selfMessage : undefined}>

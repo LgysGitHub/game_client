@@ -7,6 +7,7 @@ type MapPlayer = { id: string; team?: string; position: number[] }
 
 const teamColor = (team?: string) => (team === 'BEAR' ? '#00ff41' : team === 'PMC' ? '#00ff99' : '#7fffd4')
 const VIEW_HALF_ANGLE = Math.PI / 3
+const VIEW_RANGE = 35
 
 // M 键 2D 小地图：洞穴底图预渲染一次，每帧只叠玩家/自己
 export function Minimap({ cave, players, selfId, selfTeam }: { cave: Cave; players: MapPlayer[]; selfId: string; selfTeam?: string }) {
@@ -14,6 +15,8 @@ export function Minimap({ cave, players, selfId, selfTeam }: { cave: Cave; playe
   const baseRef = useRef<HTMLCanvasElement | null>(null)
   const playersRef = useRef(players)
   playersRef.current = players
+  const teamRef = useRef(selfTeam)
+  teamRef.current = selfTeam
 
   useEffect(() => {
     const base = document.createElement('canvas')
@@ -64,15 +67,16 @@ export function Minimap({ cave, players, selfId, selfTeam }: { cave: Cave; playe
       const fx = -Math.sin(selfPos.yaw)
       const fz = -Math.cos(selfPos.yaw)
       const cosLimit = Math.cos(VIEW_HALF_ANGLE)
+      const selfTeamNow = teamRef.current
 
       for (const p of playersRef.current) {
         if (p.id === selfId) continue
-        const allied = !!selfTeam && p.team === selfTeam
+        const allied = !!selfTeamNow && p.team === selfTeamNow
         if (!allied) {
           const dx = p.position[0] - selfPos.x
           const dz = p.position[2] - selfPos.z
           const len = Math.hypot(dx, dz)
-          if (len < 1e-3 || (dx * fx + dz * fz) / len < cosLimit) continue
+          if (len < 1e-3 || len > VIEW_RANGE || (dx * fx + dz * fz) / len < cosLimit) continue
         }
         ctx.fillStyle = allied ? teamColor(p.team) : '#ff2b2b'
         ctx.beginPath()
