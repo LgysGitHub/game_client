@@ -1,0 +1,34 @@
+.boot{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  width: 460px;
+  padding: 24px 28px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.bootLine{
+  white-space: pre;
+}
+
+.progress{
+  margin-top: 14px;
+  height: 14px;
+  border: 1px solid #1a3f1a;
+  box-shadow: inset 0 0 6px rgba(0, 255, 65, 0.25);
+}
+
+.progressFill{
+  height: 100%;
+  background: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
+  transition: width 0.1s linear;
+}
+
+.pct{
+  margin-top: 8px;
+  text-align: right;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { Cave } from './cave'
-import { selfPos } from './selfPos'
-import styles from './map.module.css'
+import { Cave } from '../Cave'
+import { selfPos } from '../selfPos'
+import styles from './Minimap.module.css'
 
 type MapPlayer = { id: string; team?: string; position: number[] }
 

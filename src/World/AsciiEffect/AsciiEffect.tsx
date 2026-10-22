@@ -127,7 +127,7 @@ export function AsciiEffect({ cols = 260 }: { cols?: number }) {
     }
   }, [atlas, quad])
 
-  // priority 1：接管渲染，R3F 不再自动渲染
+  // 接管渲染，R3F 不再自动渲染
   useFrame(() => {
     gl.setRenderTarget(rt)
     gl.render(scene, camera)

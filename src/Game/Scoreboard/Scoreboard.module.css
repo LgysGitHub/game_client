@@ -1,0 +1,89 @@
+.scoreWrap{
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  pointer-events: none;
+}
+
+.scoreboard{
+  padding: 14px 20px;
+  min-width: 560px;
+}
+
+.scoreSection + .scoreSection{
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #1a3f1a;
+}
+
+.scoreTeamHead{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.teamBear{
+  color: #00ff41;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.9);
+  letter-spacing: 2px;
+}
+
+.teamPmc{
+  color: #00ff99;
+  text-shadow: 0 0 8px rgba(0, 255, 153, 0.9);
+  letter-spacing: 2px;
+}
+
+.teamNone{
+  color: #00ff99;
+  letter-spacing: 2px;
+}
+
+.scoreCount{
+  font-size: 11px;
+  color: #00ff99;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+
+.scoreTitle{
+  color: #00ff99;
+  font-size: 13px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.scoreTable{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.scoreTable th,
+.scoreTable td{
+  padding: 3px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.scoreTable th{
+  color: #00ff99;
+  font-weight: normal;
+  border-bottom: 1px solid #1a3f1a;
+}
+
+.scoreTable td{
+  color: #00ff41;
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.7);
+}
+
+.selfRow td{
+  color: #00ff99;
+  text-shadow: 0 0 6px rgba(0, 255, 153, 0.9);
+}

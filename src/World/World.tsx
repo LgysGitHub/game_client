@@ -1,7 +1,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { ReactNode, useEffect } from 'react'
 
-import { Cave } from './cave'
+import { Cave } from './Cave'
 import { CaveMesh } from './CaveMesh'
 import { AsciiEffect } from './AsciiEffect'
 

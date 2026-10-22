@@ -1,0 +1,54 @@
+.mapWrap{
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  z-index: 7;
+  pointer-events: none;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #1a3f1a;
+  box-shadow: 0 0 18px rgba(0, 255, 65, 0.3), inset 0 0 24px rgba(0, 255, 65, 0.06);
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.mapHead{
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+  color: #00ff41;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
+}
+
+.mapSeed{
+  color: #00ff99;
+}
+
+.mapCanvas{
+  display: block;
+  width: 340px;
+  height: 340px;
+  image-rendering: pixelated;
+  border: 1px solid #1a3f1a;
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.25);
+}
+
+.mapLegend{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: #00ff99;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.mapHint{
+  margin-top: 6px;
+  text-align: right;
+  color: #1a8f4a;
+  font-size: 10px;
+  letter-spacing: 1px;
+}

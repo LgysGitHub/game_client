@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { socket } from '../Socket/socket';
 import { roles, Role } from '../types/roles';
-import styles from '../App.module.css';
+import styles from './Message.module.css';
+import term from '../styles/terminal.module.css';
 
 const TEAMS = ['BEAR', 'PMC'];
 
@@ -191,7 +192,7 @@ const Message: React.FC = () => {
         <div className={styles.chatLine}>
           <span className={styles.chatPrompt}>&gt;</span>
           <div className={styles.inputWrap}>
-            <div className={styles.inputMirror}>{inputValue}<i className={styles.blockCursor} /></div>
+            <div className={styles.inputMirror}>{inputValue}<i className={term.blockCursor} /></div>
             <input
               ref={inputRef}
               className={styles.hiddenInput}

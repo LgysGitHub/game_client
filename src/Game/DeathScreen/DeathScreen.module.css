@@ -1,0 +1,25 @@
+.respawnBox{
+  width: 260px;
+  padding: 24px 32px;
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 3px;
+}
+
+.respawnCount{
+  margin-top: 10px;
+  font-size: 64px;
+  line-height: 1;
+  animation: blink 1s steps(1) infinite;
+}
+
+.respawnSub{
+  margin-top: 6px;
+  font-size: 12px;
+  color: #00ff99;
+  letter-spacing: 2px;
+}
+
+@keyframes blink{
+  50% { opacity: 0; }
+}

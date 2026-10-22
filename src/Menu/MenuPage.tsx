@@ -187,5 +187,3 @@ export const MenuPage: React.FC<{
     </div>
   )
 }
-
-export default MenuPage

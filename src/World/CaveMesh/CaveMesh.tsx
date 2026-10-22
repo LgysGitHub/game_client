@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Cave, buildWallGeometry } from './cave'
+import { Cave, buildWallGeometry } from '../Cave'
 
 // 墙体渲染：整张地图只生成一个合并后的 BufferGeometry
 export function CaveMesh({ cave }: { cave: Cave }) {

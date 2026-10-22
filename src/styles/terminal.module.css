@@ -1,0 +1,76 @@
+/* 全局终端视觉：面板 / 光标 / 遮罩 / 按钮，供各组件引用 */
+
+.terminal{
+  position: relative;
+  border: 1px solid #1a3f1a;
+  background: rgba(0, 255, 65, 0.04);
+  box-shadow:
+    0 0 10px rgba(0, 255, 65, 0.35),
+    inset 0 0 14px rgba(0, 255, 65, 0.08);
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.8);
+}
+
+.terminal::before{
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px #00ff41);
+  background:
+    linear-gradient(#00ff41, #00ff41) left 0 top 0 / 14px 2px no-repeat,
+    linear-gradient(#00ff41, #00ff41) left 0 top 0 / 2px 14px no-repeat,
+    linear-gradient(#00ff41, #00ff41) right 0 top 0 / 14px 2px no-repeat,
+    linear-gradient(#00ff41, #00ff41) right 0 top 0 / 2px 14px no-repeat,
+    linear-gradient(#00ff41, #00ff41) left 0 bottom 0 / 14px 2px no-repeat,
+    linear-gradient(#00ff41, #00ff41) left 0 bottom 0 / 2px 14px no-repeat,
+    linear-gradient(#00ff41, #00ff41) right 0 bottom 0 / 14px 2px no-repeat,
+    linear-gradient(#00ff41, #00ff41) right 0 bottom 0 / 2px 14px no-repeat;
+}
+
+.blockCursor{
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #00ff41;
+  box-shadow: 0 0 6px #00ff41;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink{
+  50% { opacity: 0; }
+}
+
+.overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.menuTitle{
+  font-size: 18px;
+  letter-spacing: 4px;
+  margin-bottom: 6px;
+}
+
+.btn{
+  padding: 10px 0;
+  color: #00ff41;
+  background: transparent;
+  border: 1px solid #1a3f1a;
+  font: inherit;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.8);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btn:hover{
+  background: rgba(0, 255, 65, 0.15);
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.6);
+}

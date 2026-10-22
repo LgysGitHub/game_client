@@ -1,0 +1,60 @@
+.menuCard{
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu{
+  width: 300px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+}
+
+.seedSection{
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #1a3f1a;
+}
+
+.seedLabel{
+  color: #00ff99;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.seedRow{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.seedInput{
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid #1a3f1a;
+  color: #00ff41;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  caret-color: #00ff41;
+}
+
+.seedInput:focus{
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+}
+
+.seedError{
+  margin-top: 6px;
+  color: #00ff99;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
